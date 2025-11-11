@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  matchmaking-server:
+    build: .
+    container_name: openquiz-matchmaking
+    ports:
+      - "4230:4230"
+    environment:
+      - FLASK_ENV=development
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:4230/health')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
