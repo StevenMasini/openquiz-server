@@ -241,4 +241,4 @@ if __name__ == '__main__':
     print(f"📝 Room expiry: {ROOM_EXPIRY_MINUTES} minutes")
     print(f"👥 Max players per room: {MAX_PLAYERS_PER_ROOM}")
     print("=" * 50)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=4230)
