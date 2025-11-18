@@ -5,6 +5,8 @@ Supports flexible quiz structures with different content types
 
 from typing import List, Dict, Any, Optional, Type
 from html import escape
+import json
+from pathlib import Path
 from .items import Item, item_from_dict
 
 
@@ -160,6 +162,55 @@ class QuizTemplate:
         metadata = data.get('metadata', {})
 
         return cls(question, answers, correct_index, metadata)
+
+    def to_json_file(self, filepath: str, include_solution: bool = True, indent: int = 2) -> None:
+        """
+        Save QuizTemplate to a JSON file
+
+        Args:
+            filepath: Path to the JSON file to write
+            include_solution: If True, includes correct_index in the output
+            indent: Number of spaces for JSON indentation (default: 2, None for compact)
+
+        Raises:
+            IOError: If file cannot be written
+        """
+        path = Path(filepath)
+
+        # Create parent directory if it doesn't exist
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Convert to dict and write to file
+        data = self.to_dict(include_solution=include_solution)
+
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=indent, ensure_ascii=False)
+
+    @classmethod
+    def from_json_file(cls, filepath: str) -> 'QuizTemplate':
+        """
+        Load QuizTemplate from a JSON file
+
+        Args:
+            filepath: Path to the JSON file to read
+
+        Returns:
+            QuizTemplate instance
+
+        Raises:
+            FileNotFoundError: If file doesn't exist
+            json.JSONDecodeError: If file contains invalid JSON
+            ValueError: If JSON data is invalid for QuizTemplate
+        """
+        path = Path(filepath)
+
+        if not path.exists():
+            raise FileNotFoundError(f"Quiz template file not found: {filepath}")
+
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        return cls.from_dict(data)
 
 
 class QuizTemplateRegistry:

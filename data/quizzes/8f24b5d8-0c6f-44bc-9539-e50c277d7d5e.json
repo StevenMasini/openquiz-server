@@ -1,0 +1,34 @@
+{
+  "question": {
+    "type": "text",
+    "content": "What is 2 + 2?",
+    "css_class": ""
+  },
+  "answers": [
+    {
+      "type": "text",
+      "content": "3",
+      "css_class": ""
+    },
+    {
+      "type": "text",
+      "content": "4",
+      "css_class": ""
+    },
+    {
+      "type": "text",
+      "content": "5",
+      "css_class": ""
+    },
+    {
+      "type": "text",
+      "content": "22",
+      "css_class": ""
+    }
+  ],
+  "metadata": {
+    "difficulty": "trivial",
+    "points": 5
+  },
+  "correct_index": 1
+}

@@ -9,6 +9,8 @@ import random
 import string
 from typing import Dict, List, Optional
 import threading
+import uuid
+from templates import QuizTemplate
 
 app = Flask(__name__)
 
@@ -16,9 +18,14 @@ app = Flask(__name__)
 game_rooms: Dict[str, dict] = {}
 room_lock = threading.Lock()
 
+# In-memory storage for quizzes
+quizzes: Dict[str, dict] = {}
+quiz_lock = threading.Lock()
+
 # Configuration
 ROOM_EXPIRY_MINUTES = 30
 MAX_PLAYERS_PER_ROOM = 10
+QUIZ_STORAGE_DIR = 'data/quizzes'
 
 
 def generate_room_code() -> str:
@@ -233,6 +240,164 @@ def list_rooms():
     return jsonify({
         'rooms': rooms_list,
         'total': len(rooms_list)
+    }), 200
+
+
+# ============================================================================
+# Quiz Endpoints
+# ============================================================================
+
+@app.route('/quiz/create', methods=['POST'])
+def create_quiz():
+    """
+    Create a new quiz from JSON data
+
+    Request body:
+    {
+        "question": {
+            "type": "text",
+            "content": "What is the capital of France?"
+        },
+        "answers": [
+            {"type": "text", "content": "London"},
+            {"type": "text", "content": "Paris"},
+            {"type": "text", "content": "Berlin"},
+            {"type": "text", "content": "Madrid"}
+        ],
+        "correct_index": 1,
+        "metadata": {
+            "difficulty": "easy",
+            "points": 10
+        }
+    }
+
+    Optional query parameter:
+    - save_to_file: If true, saves the quiz to a JSON file (default: false)
+
+    Response:
+    {
+        "quiz_id": "uuid-here",
+        "message": "Quiz created successfully",
+        "saved_to_file": false,
+        "file_path": null,
+        "created_at": "2025-11-18T12:00:00"
+    }
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Request body is required'}), 400
+
+    # Validate required fields
+    if 'question' not in data:
+        return jsonify({'error': 'question is required'}), 400
+    if 'answers' not in data:
+        return jsonify({'error': 'answers is required'}), 400
+    if 'correct_index' not in data:
+        return jsonify({'error': 'correct_index is required'}), 400
+
+    try:
+        # Create QuizTemplate from JSON data
+        quiz = QuizTemplate.from_dict(data)
+
+        # Validate the quiz
+        if not quiz.validate():
+            return jsonify({'error': 'Invalid quiz structure'}), 400
+
+        # Generate unique quiz ID
+        quiz_id = str(uuid.uuid4())
+        created_at = datetime.now()
+
+        # Store in memory
+        with quiz_lock:
+            quizzes[quiz_id] = {
+                'id': quiz_id,
+                'quiz': quiz,
+                'created_at': created_at,
+                'metadata': quiz.metadata
+            }
+
+        # Optionally save to file
+        save_to_file = request.args.get('save_to_file', 'false').lower() == 'true'
+        file_path = None
+
+        if save_to_file:
+            import os
+            os.makedirs(QUIZ_STORAGE_DIR, exist_ok=True)
+            file_path = f"{QUIZ_STORAGE_DIR}/{quiz_id}.json"
+            quiz.to_json_file(file_path, include_solution=True)
+
+        return jsonify({
+            'quiz_id': quiz_id,
+            'message': 'Quiz created successfully',
+            'saved_to_file': save_to_file,
+            'file_path': file_path,
+            'created_at': created_at.isoformat(),
+            'question_preview': data['question'].get('content', 'N/A'),
+            'answer_count': len(data['answers'])
+        }), 201
+
+    except ValueError as e:
+        return jsonify({'error': f'Invalid quiz data: {str(e)}'}), 400
+    except Exception as e:
+        return jsonify({'error': f'Failed to create quiz: {str(e)}'}), 500
+
+
+@app.route('/quiz/<quiz_id>', methods=['GET'])
+def get_quiz(quiz_id: str):
+    """
+    Get a quiz by ID
+
+    Query parameters:
+    - include_solution: If true, includes the correct_index (default: false)
+
+    Response:
+    {
+        "quiz_id": "uuid-here",
+        "quiz": {...},
+        "created_at": "2025-11-18T12:00:00",
+        "metadata": {...}
+    }
+    """
+    with quiz_lock:
+        quiz_data = quizzes.get(quiz_id)
+
+        if not quiz_data:
+            return jsonify({'error': 'Quiz not found'}), 404
+
+        include_solution = request.args.get('include_solution', 'false').lower() == 'true'
+
+        return jsonify({
+            'quiz_id': quiz_id,
+            'quiz': quiz_data['quiz'].to_dict(include_solution=include_solution),
+            'created_at': quiz_data['created_at'].isoformat(),
+            'metadata': quiz_data['metadata']
+        }), 200
+
+
+@app.route('/quizzes', methods=['GET'])
+def list_quizzes():
+    """
+    List all quizzes
+
+    Response:
+    {
+        "quizzes": [...],
+        "total": 5
+    }
+    """
+    with quiz_lock:
+        quiz_list = [
+            {
+                'quiz_id': quiz_id,
+                'created_at': quiz_data['created_at'].isoformat(),
+                'metadata': quiz_data['metadata']
+            }
+            for quiz_id, quiz_data in quizzes.items()
+        ]
+
+    return jsonify({
+        'quizzes': quiz_list,
+        'total': len(quiz_list)
     }), 200
 
 

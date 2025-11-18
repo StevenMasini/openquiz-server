@@ -1,211 +1,149 @@
-# OpenQuiz
+# OpenQuiz Server
+
+A Flask-based server for managing game rooms and quizzes with flexible content types.
 
 ## Features
 
-### Main Endpoints
-
-1. POST /room/create - Creates a new game room with a 6-digit code
-2. POST /room/join - Join an existing room using the code
-3. GET /room/ - Get room details
-4. GET /rooms - List all active rooms
-5. GET /health - Health check endpoint
-
-### Key Features
-
-- 6-digit numerical room codes (e.g., "123456")
+### Room Management
+- 6-digit numerical room codes for easy sharing
 - Thread-safe room management
 - Automatic room expiry (30 minutes)
+- Player capacity limits (configurable, default 10 players)
 - Duplicate player name prevention
-- Room capacity limits (configurable, default 10 players)
+
+### Quiz System
+- Flexible quiz creation from JSON
+- Multiple content types: text, image, video, audio
+- In-memory storage with optional file persistence
+- Solution visibility control (client vs. server)
+- Metadata support (difficulty, points, categories, etc.)
+- Thread-safe quiz management
+
+### General
 - Comprehensive error handling
+- RESTful API design
+- Health check endpoint
 
-### Getting Started
+## Quick Start
 
-Install dependencies:
-`pip install -r requirements.txt`
+```bash
+# Install dependencies
+pip install -r requirements.txt
 
-Run the server:
-`python server.py`
+# Run the server
+python server.py
+```
 
-The server will start on `http://localhost:5000`
+The server will start on `http://localhost:4230`
 
-### API Usage Examples
+## API Endpoints
 
-#### Create a room
+### Room Management
+- `POST /room/create` - Create a new game room
+- `POST /room/join` - Join an existing room
+- `GET /room/<room_code>` - Get room details
+- `GET /rooms` - List all active rooms
 
-```curl
-curl -X POST http://localhost:5000/room/create \
+### Quiz Management
+- `POST /quiz/create` - Create a new quiz from JSON
+- `GET /quiz/<quiz_id>` - Get a quiz by ID
+- `GET /quizzes` - List all quizzes
+
+### General
+- `GET /health` - Health check endpoint
+
+## Documentation
+
+- **[Getting Started](docs/getting-started.md)** - Installation, setup, and configuration
+- **[Room API](docs/room-api.md)** - Room management endpoints and examples
+- **[Quiz API](docs/quiz-api.md)** - Quiz creation, retrieval, and item types
+
+## Quick Examples
+
+### Create a Room
+
+```bash
+curl -X POST http://localhost:4230/room/create \
   -H "Content-Type: application/json" \
   -d '{"host_name": "Player1", "max_players": 4}'
 ```
 
-Response
+### Create a Quiz
 
-```json
-
-{
-  "room_code": "123456",
-  "host_name": "Player1",
-  "created_at": "2025-11-10T12:00:00",
-  "expires_at": "2025-11-10T12:30:00",
-  "max_players": 4
-}
-```
-
-#### Join a room
-
-```curl
-curl -X POST http://localhost:5000/room/join \
+```bash
+curl -X POST http://localhost:4230/quiz/create \
   -H "Content-Type: application/json" \
-  -d '{"room_code": "123456", "player_name": "Player2"}'
+  -d '{
+    "question": {"type": "text", "content": "What is 2+2?"},
+    "answers": [
+      {"type": "text", "content": "3"},
+      {"type": "text", "content": "4"},
+      {"type": "text", "content": "5"}
+    ],
+    "correct_index": 1,
+    "metadata": {"difficulty": "easy", "points": 10}
+  }'
 ```
 
-Response
+### Health Check
 
-```json
-  {
-    "room_code": "123456",
-    "player_name": "Player2",
-    "players": ["Player1", "Player2"],
-    "host_name": "Player1",
-    "player_count": 2,
-    "max_players": 4,
-    "status": "waiting"
-  }
+```bash
+curl http://localhost:4230/health
 ```
 
-## What's left to do
+## Project Structure
 
-The server is production-ready for development and testing. For production use, consider adding:
+```
+openquiz-server/
+├── server.py                    # Main Flask server
+├── templates/                   # Quiz template system
+│   ├── __init__.py
+│   ├── items.py                # Item types (Text, Image, Video, Audio)
+│   ├── quiz.py                 # QuizTemplate and Registry
+│   └── README.md               # Template system documentation
+├── docs/                        # API documentation
+│   ├── getting-started.md      # Setup and configuration
+│   ├── room-api.md             # Room endpoints
+│   └── quiz-api.md             # Quiz endpoints
+├── examples.py                  # Usage examples
+├── test_quiz_create_api.py     # API tests
+└── data/                        # Quiz storage (when save_to_file=true)
+    └── quizzes/
+```
+
+## Testing
+
+Run the test suite:
+
+```bash
+python test_quiz_create_api.py
+```
+
+## Configuration
+
+Edit `server.py` to configure:
+
+```python
+ROOM_EXPIRY_MINUTES = 30         # Room expiration time
+MAX_PLAYERS_PER_ROOM = 10        # Maximum players per room
+QUIZ_STORAGE_DIR = 'data/quizzes'  # Quiz file storage directory
+```
+
+## Production Considerations
+
+This server is ready for development and testing. For production use, consider adding:
 
 - Database persistence (PostgreSQL, Redis)
 - Authentication/authorization
 - WebSocket support for real-time updates
 - Rate limiting
 - HTTPS support
+- Production WSGI server (Gunicorn, uWSGI)
 
-## Perfect! Let me show you a summary of what I've implemented:
+## License
 
-  📦 Implementation Complete!
+MIT License
 
-  I've created a flexible quiz template system using ABC with Item composition and HTML rendering.
-  Here's what was built:
+## Contributing
 
-  📁 File Structure
-
-  openquiz-server/
-  ├── templates/
-  │   ├── __init__.py          # Package exports
-  │   ├── items.py             # Item ABC + concrete implementations
-  │   ├── quiz.py              # QuizTemplate + Registry
-  │   └── README.md            # Complete documentation
-  ├── examples.py              # 10+ usage examples
-  ├── server_integration_example.py  # Flask API integration
-  └── test_quiz_api.py         # API endpoint tests
-
-  🏗️ Architecture
-
-  Item (ABC)
-  ├── TextItem        # <p>text</p>
-  ├── ImageItem       # <img src="..." />
-  ├── VideoItem       # <video>...</video>
-  └── AudioItem       # <audio>...</audio>
-
-  QuizTemplate
-  ├── question: Item           # Any Item type
-  ├── answers: List[Item]      # List of any Item types
-  ├── correct_index: int       # Index of correct answer
-  └── metadata: Dict           # Points, time, difficulty, etc.
-
-  ✨ Key Features
-
-  1. Flexible composition - Mix any content types
-  2. HTML rendering - quiz.render() produces ready-to-use HTML
-  3. Security - Automatic HTML escaping prevents XSS
-  4. Variable answers - 4, 6, or any number of answers
-  5. Metadata support - Points, time limits, difficulty, categories
-  6. Serialization - Save/load from dictionaries/JSON
-  7. Registry pattern - Manage multiple quizzes by ID
-
-  🎯 Usage Examples
-
-  Basic 4-answer text quiz:
-  quiz = QuizTemplate(
-      question=TextItem("What is 2+2?"),
-      answers=[TextItem("3"), TextItem("4"), TextItem("5"), TextItem("6")],
-      correct_index=1
-  )
-  html = quiz.render()
-
-  Image question, 6 text answers:
-  quiz = QuizTemplate(
-      question=ImageItem("https://example.com/flag.png", width="300px"),
-      answers=[TextItem(f"Country {i}") for i in range(6)],
-      correct_index=2
-  )
-
-  Mix any content types:
-  quiz = QuizTemplate(
-      question=VideoItem("https://example.com/clip.mp4"),
-      answers=[ImageItem(f"option{i}.png") for i in range(4)],
-      correct_index=0
-  )
-
-  🔌 Server Integration
-
-  The server_integration_example.py provides Flask endpoints:
-
-- GET /quiz/list - List all quizzes
-- GET /quiz/<id>/html - Get rendered HTML
-- GET /quiz/<id>/data - Get structured data
-- POST /quiz/<id>/submit - Submit answer & get points
-- POST /room/<code>/quiz - Assign quiz to game room
-
-  🧪 Try It Out
-
-# See all examples
-  python examples.py
-
-# Start the integration server
-  python server_integration_example.py
-
-# Test the API (in another terminal)
-  python test_quiz_api.py
-
-  🎨 HTML Output Example
-
-  <div class="quiz-container">
-    <div class="quiz-question">
-      <p>What is the capital of France?</p>
-    </div>
-    <div class="quiz-answers">
-      <div class="quiz-answer" data-answer-index="0">
-        <p>London</p>
-      </div>
-      <div class="quiz-answer" data-answer-index="1">
-        <p>Paris</p>
-      </div>
-      <!-- ... -->
-    </div>
-  </div>
-
-  🚀 Server Only Knows the Interface
-
-  def send_quiz_to_player(quiz: QuizTemplate):
-      # Server doesn't know if it's text, image, video, etc!
-      html = quiz.render()
-      send_to_client(html)
-
-  def check_player_answer(quiz: QuizTemplate, answer: int):
-      # Works for any quiz type
-      return quiz.check_answer(answer)
-
-  The server works purely through the Item interface - it never needs to know what specific types are
-  inside!
-
-  📚 Full Documentation
-
-  See templates/README.md for complete API documentation, security notes, and extension examples.
-
-  Your friend's compositional design was great! This gives you maximum flexibility to define any quiz
-  template while keeping the server code simple and clean.
+Contributions are welcome! Please feel free to submit a Pull Request.

@@ -221,6 +221,65 @@ def example_serialization():
     print("\n" + "="*50 + "\n")
 
 
+def example_json_file_serialization():
+    """Demonstrate saving and loading quizzes from JSON files"""
+    import os
+    import tempfile
+
+    # Create a quiz
+    original_quiz = QuizTemplate(
+        question=TextItem("What is the speed of light?"),
+        answers=[
+            TextItem("299,792,458 m/s"),
+            TextItem("300,000,000 m/s"),
+            TextItem("186,282 miles/s"),
+            TextItem("670,616,629 mph")
+        ],
+        correct_index=0,
+        metadata={
+            'difficulty': 'hard',
+            'points': 25,
+            'category': 'physics',
+            'time_limit': 45
+        }
+    )
+
+    print("=== JSON File Serialization Example ===")
+
+    # Create a temporary directory for demonstration
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Save to JSON file (with solution for storage)
+        storage_path = os.path.join(temp_dir, 'quizzes', 'physics_001.json')
+        original_quiz.to_json_file(storage_path, include_solution=True)
+        print(f"Quiz saved to: {storage_path}")
+        print()
+
+        # Read and display the JSON file content
+        with open(storage_path, 'r') as f:
+            print("JSON file content:")
+            print(f.read())
+        print()
+
+        # Load the quiz back from file
+        loaded_quiz = QuizTemplate.from_json_file(storage_path)
+        print("Quiz loaded successfully!")
+        print(f"Question: {loaded_quiz.question.content}")
+        print(f"Number of answers: {len(loaded_quiz.answers)}")
+        print(f"Correct answer: {loaded_quiz.answers[loaded_quiz.correct_index].content}")
+        print(f"Metadata: {loaded_quiz.metadata}")
+        print()
+
+        # Save without solution (for client distribution)
+        client_path = os.path.join(temp_dir, 'client_quiz.json')
+        original_quiz.to_json_file(client_path, include_solution=False)
+        print(f"Client version saved to: {client_path}")
+        with open(client_path, 'r') as f:
+            print("Client JSON (note: no correct_index):")
+            print(f.read())
+
+    print("\n" + "="*50 + "\n")
+
+
 def example_registry():
     """Demonstrate using the registry"""
     registry = QuizTemplateRegistry()
@@ -287,6 +346,7 @@ if __name__ == '__main__':
     example_six_answer_quiz()
     example_with_solution()
     example_serialization()
+    example_json_file_serialization()
     example_registry()
     example_custom_css()
 
