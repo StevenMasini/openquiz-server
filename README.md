@@ -6,9 +6,10 @@
 
 1. POST /room/create - Creates a new game room with a 6-digit code
 2. POST /room/join - Join an existing room using the code
-3. GET /room/ - Get room details
-4. GET /rooms - List all active rooms
-5. GET /health - Health check endpoint
+3. GET /room/<room_code> - Get room details
+4. PUT /room/<room_code> - Update room status
+5. GET /rooms - List all active rooms
+6. GET /health - Health check endpoint
 
 ### Key Features
 
@@ -70,9 +71,29 @@ Response
     "host_name": "Player1",
     "player_count": 2,
     "max_players": 4,
-    "status": "waiting"
+    "status": "pending"
   }
 ```
+
+#### Update room status
+
+```curl
+curl -X PUT http://localhost:5000/room/123456 \
+  -H "Content-Type: application/json" \
+  -d '{"status": "ready"}'
+```
+
+Response
+
+```json
+{
+  "room_code": "123456",
+  "status": "ready",
+  "message": "Room status updated successfully"
+}
+```
+
+Valid statuses: `pending`, `ready`, `playing`, `finished`
 
 ## What's left to do
 

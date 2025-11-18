@@ -63,6 +63,34 @@ def test_list_rooms():
     print(f"Status: {response.status_code}")
     print(f"Response: {json.dumps(response.json(), indent=2)}\n")
 
+def test_update_room_status(room_code):
+    """Test updating room status"""
+    print(f"Testing PUT /room/{room_code} endpoint...")
+
+    # Test each valid status
+    statuses = ["ready", "playing", "finished", "pending"]
+    for status in statuses:
+        data = {"status": status}
+        response = requests.put(
+            f"{BASE_URL}/room/{room_code}",
+            headers={"Content-Type": "application/json"},
+            json=data
+        )
+        print(f"  Setting status to '{status}': {response.status_code}")
+        if response.status_code == 200:
+            print(f"  Response: {json.dumps(response.json(), indent=2)}")
+
+    # Test invalid status
+    print("  Testing invalid status...")
+    data = {"status": "invalid"}
+    response = requests.put(
+        f"{BASE_URL}/room/{room_code}",
+        headers={"Content-Type": "application/json"},
+        json=data
+    )
+    print(f"  Invalid status response: {response.status_code}")
+    print(f"  Response: {json.dumps(response.json(), indent=2)}\n")
+
 if __name__ == "__main__":
     print("=" * 50)
     print("Matchmaking Server API Tests")
@@ -86,6 +114,9 @@ if __name__ == "__main__":
 
         # Test getting room info
         test_get_room(room_code)
+
+        # Test updating room status
+        test_update_room_status(room_code)
 
         # Test listing rooms
         test_list_rooms()

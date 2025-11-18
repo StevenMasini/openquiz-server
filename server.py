@@ -89,7 +89,7 @@ def create_room():
             'created_at': created_at,
             'expires_at': expires_at,
             'max_players': max_players,
-            'status': 'waiting'
+            'status': 'pending'
         }
 
     return jsonify({
@@ -118,7 +118,7 @@ def join_room():
         "player_name": "Player2",
         "players": ["Player1", "Player2"],
         "host_name": "Player1",
-        "status": "waiting"
+        "status": "pending"
     }
     """
     cleanup_expired_rooms()
@@ -177,7 +177,7 @@ def get_room_info(room_code: str):
         "players": ["Player1", "Player2"],
         "player_count": 2,
         "max_players": 10,
-        "status": "waiting",
+        "status": "pending",
         "created_at": "2025-11-10T12:00:00",
         "expires_at": "2025-11-10T12:30:00"
     }
@@ -202,6 +202,56 @@ def get_room_info(room_code: str):
             'status': room['status'],
             'created_at': room['created_at'].isoformat(),
             'expires_at': room['expires_at'].isoformat()
+        }), 200
+
+
+@app.route('/room/<room_code>', methods=['PUT'])
+def update_room_status(room_code: str):
+    """
+    Update the status of a room
+
+    Request body:
+    {
+        "status": "pending" | "ready" | "playing" | "finished"
+    }
+
+    Response:
+    {
+        "room_code": "123456",
+        "status": "ready",
+        "message": "Room status updated successfully"
+    }
+    """
+    cleanup_expired_rooms()
+
+    if not (len(room_code) == 6 and room_code.isdigit()):
+        return jsonify({'error': 'Invalid room code format. Must be 6 digits'}), 400
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Request body is required'}), 400
+
+    new_status = data.get('status', '').strip()
+
+    # Validate status
+    valid_statuses = ['pending', 'ready', 'playing', 'finished']
+    if new_status not in valid_statuses:
+        return jsonify({
+            'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'
+        }), 400
+
+    with room_lock:
+        room = game_rooms.get(room_code)
+
+        if not room:
+            return jsonify({'error': 'Room not found or expired'}), 404
+
+        room['status'] = new_status
+
+        return jsonify({
+            'room_code': room_code,
+            'status': new_status,
+            'message': 'Room status updated successfully'
         }), 200
 
 
