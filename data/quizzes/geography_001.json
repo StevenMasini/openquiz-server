@@ -1,0 +1,35 @@
+{
+  "question": {
+    "type": "text",
+    "content": "What is the capital of France?",
+    "css_class": ""
+  },
+  "answers": [
+    {
+      "type": "text",
+      "content": "London",
+      "css_class": ""
+    },
+    {
+      "type": "text",
+      "content": "Paris",
+      "css_class": ""
+    },
+    {
+      "type": "text",
+      "content": "Berlin",
+      "css_class": ""
+    },
+    {
+      "type": "text",
+      "content": "Madrid",
+      "css_class": ""
+    }
+  ],
+  "metadata": {
+    "difficulty": "easy",
+    "points": 10,
+    "time_limit": 30
+  },
+  "correct_index": 1
+}
