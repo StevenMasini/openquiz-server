@@ -4,6 +4,7 @@ Provides HTTP endpoints to create and join game rooms with 6-digit codes
 """
 
 from flask import Flask, jsonify
+from flask_cors import CORS
 from datetime import datetime
 from typing import Dict
 import threading
@@ -12,6 +13,7 @@ import threading
 from room_routes import room_bp, init_room_routes
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # In-memory storage for game rooms
 game_rooms: Dict[str, dict] = {}
@@ -36,8 +38,8 @@ def health_check():
 
 
 if __name__ == '__main__':
-    print("🎮 Matchmaking Server Starting...")
-    print(f"📝 Room expiry: {ROOM_EXPIRY_MINUTES} minutes")
-    print(f"👥 Max players per room: {MAX_PLAYERS_PER_ROOM}")
+    print("Matchmaking Server Starting...")
+    print(f"Room expiry: {ROOM_EXPIRY_MINUTES} minutes")
+    print(f"Max players per room: {MAX_PLAYERS_PER_ROOM}")
     print("=" * 50)
     app.run(debug=True, host='0.0.0.0', port=4230)
